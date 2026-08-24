@@ -47,26 +47,26 @@ dsh web
 
 以后只需选择已保存的服务器。切换后模型仍然使用 DSH 官方工具，变化的只是工具背后的执行位置。
 
-## ����Ԥ��
+## 界面预览
 
 <details>
-<summary><strong>���Ӳ����� SSH ������</strong></summary>
+<summary><strong>添加并配置 SSH 服务器</strong></summary>
 
-![���Ӳ����� SSH ������](./docs/images/add-server.png)
+![添加并配置 SSH 服务器](./docs/images/add-server.png)
 
 </details>
 
 <details>
-<summary><strong>�ڱ�����Զ��ִ�л���֮���л�</strong></summary>
+<summary><strong>在本地与远程执行环境之间切换</strong></summary>
 
-![�л�ִ�л���](./docs/images/switch-environment.png)
+![切换执行环境](./docs/images/switch-environment.png)
 
 </details>
 
 <details>
-<summary><strong>ʹ�� DSH ԭ�����߲���Զ�̷�����</strong></summary>
+<summary><strong>使用 DSH 原生工具操作远程服务器</strong></summary>
 
-![Զ�̷�����ִ��Ч��](./docs/images/remote-execution.png)
+![远程服务器执行效果](./docs/images/remote-execution.png)
 
 </details>
 
