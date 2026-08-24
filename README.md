@@ -2,6 +2,12 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
+[![DSH Plugin](https://img.shields.io/badge/DSH-Plugin-111827)](https://github.com/deepseek-ai/deepseek-harness)
+[![Release](https://img.shields.io/github/v/release/NaNQiQ/deepseek-harness-remote-ssh?display_name=tag&sort=semver)](https://github.com/NaNQiQ/deepseek-harness-remote-ssh/releases)
+[![Node.js 24+](https://img.shields.io/badge/Node.js-24%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Remote SSH](https://img.shields.io/badge/Remote-SSH-2563EB?logo=openssh&logoColor=white)](./ARCHITECTURE.md)
+[![License: MIT](https://img.shields.io/github/license/NaNQiQ/deepseek-harness-remote-ssh)](./LICENSE)
+
 Use the native **DeepSeek Harness (DSH)** tools directly on remote Linux servers.
 
 Select a saved server next to the conversation composer and DSH's existing `read / write / edit / glob / grep / bash / terminal` tools run remotely. The plugin does not modify DSH source code, and the server does not need DSH, this plugin, Node.js, or Python installed.
@@ -126,7 +132,7 @@ Restart DSH after updating or removing the plugin.
 
 ## Friends
 
-- [LINUX DO](https://linux.do/)
+[![LINUX DO](https://img.shields.io/badge/LINUX%20DO-Community-F2C94C)](https://linux.do/)
 
 ## License
 

@@ -2,6 +2,12 @@
 
 [简体中文](./README.zh-CN.md) | [English](./README.md)
 
+[![DSH Plugin](https://img.shields.io/badge/DSH-Plugin-111827)](https://github.com/deepseek-ai/deepseek-harness)
+[![Release](https://img.shields.io/github/v/release/NaNQiQ/deepseek-harness-remote-ssh?display_name=tag&sort=semver)](https://github.com/NaNQiQ/deepseek-harness-remote-ssh/releases)
+[![Node.js 24+](https://img.shields.io/badge/Node.js-24%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Remote SSH](https://img.shields.io/badge/Remote-SSH-2563EB?logo=openssh&logoColor=white)](./ARCHITECTURE.md)
+[![License: MIT](https://img.shields.io/github/license/NaNQiQ/deepseek-harness-remote-ssh)](./LICENSE)
+
 让 **DeepSeek Harness（DSH）** 使用原生工具直接操作远程 Linux 服务器。
 
 在对话输入框旁选择一台已添加的服务器后，DSH 原有的 `read / write / edit / glob / grep / bash / terminal` 会切换到远端执行。插件不修改 DSH 源码，服务器也无需安装 DSH、本插件、Node.js 或 Python。
@@ -126,7 +132,7 @@ dsh plugin --profile web remove dsh-remote-ssh
 
 ## 友链
 
-- [LINUX DO](https://linux.do/)
+[![LINUX DO](https://img.shields.io/badge/LINUX%20DO-Community-F2C94C)](https://linux.do/)
 
 ## License
 
