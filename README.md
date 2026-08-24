@@ -1,191 +1,208 @@
 # DSH Remote SSH
 
-[简体中文](./README.zh-CN.md) | English
+[简体中文](./README.zh-CN.md) | [English](./README.md)
 
-An external SSH execution provider for **DeepSeek Harness (DSH)**. It keeps the official DSH tools unchanged and switches their execution world between the local machine and a selected Linux server.
+Use **DeepSeek Harness (DSH)** on remote Linux hosts without replacing its native tools. The same `read / write / edit / glob / grep / bash / terminal` tools can execute locally or through SSH on a selected server.
 
 > Community project. Not affiliated with or endorsed by DeepSeek.
 
-## Highlights
+## Features
 
-- Keeps the official DSH `read`, `write`, `edit`, `bash`, `glob`, `grep`, and `terminal` tools.
-- No model-facing `ssh_*` / `remote_*` replacement tools.
-- Switch execution targets inside the same conversation while keeping conversation context.
-- Persistent, UI-only execution handoff markers in the conversation timeline.
-- SSH/SFTP based filesystem, process and PTY transport.
-- Official DSH search semantics are preserved; packaged ripgrep is resolved for the remote Linux architecture and cached under the remote user cache.
-- Full remote absolute paths such as `/etc`, `/var`, and `/opt` remain available when the SSH account is allowed to access them.
-- SSH Agent, private-key file, and ephemeral password authentication.
-- Host-key fingerprint verification on first connection.
-- The target Linux server does not need this plugin, DSH, Node.js, Python, or a manually installed ripgrep.
+- Keeps the official DSH tools; no model-facing `ssh_*` or `remote_*` replacement tools.
+- Switches the execution environment of the same conversation between the local machine and configured Linux servers.
+- Uses SFTP for remote filesystem access, SSH exec for processes and shells, and SSH PTY for interactive terminals.
+- Preserves DSH search semantics for `glob / grep`; the required ripgrep binary is resolved for the remote Linux environment and cached there.
+- Treats `cwd` as the initial working directory, not a filesystem boundary; effective access is controlled by the remote SSH account.
+- Supports SSH Agent, private-key file, and temporary password authentication.
+- Supports SSH Host Key fingerprint confirmation on first connection.
+- Does not require the remote Linux host to install this plugin, DSH, Node.js, or Python.
+- Shows execution-environment switches in the conversation timeline without sending that UI marker to the model as a user or assistant message.
 
-## Compatibility
+## Quick start
 
-Current release: `1.0.2`
+Prerequisites: DeepSeek Harness is installed and working, and both `dsh` and `pnpm` are available on PATH.
 
-- Uses the official DeepSeek Harness Bundle / Provider interfaces and does not hard-code a DSH application-version check.
-- Does not patch DSH source or replace official tools; it follows the standard DSH plugin and Provider seams.
-- Node.js `>= 24`.
-- The Web UI is loaded through the official DSH client extension slots.
+### Install
+
+Install directly from GitHub through the DSH profile plugin mechanism:
+
+```bash
+dsh plugin --profile web add github:NaNQiQ/DeepSeek-Harness-remote-ssh
+dsh web
+```
+
+Optionally verify that the bundle is present in the Web profile:
+
+```bash
+dsh --profile web --dump-config
+```
+
+The output should contain:
+
+```text
+dsh-remote-ssh
+```
+
+### Update
+
+```bash
+dsh plugin --profile web update dsh-remote-ssh
+dsh web
+```
+
+If the dependency was installed from a pinned Git tag or commit, updates remain constrained by that pin. Reinstall the desired tag or commit to move to another pinned version.
+
+### Uninstall
+
+```bash
+dsh plugin --profile web remove dsh-remote-ssh
+```
+
+Then restart DSH.
+
+### Install a specific version
+
+Append a Git tag or commit to the GitHub package spec:
+
+```bash
+dsh plugin --profile web add github:NaNQiQ/DeepSeek-Harness-remote-ssh#<tag-or-commit>
+```
+
+The README intentionally does not pin a release number. See [CHANGELOG.md](./CHANGELOG.md) and GitHub Releases for version-specific changes.
+
+## Usage
+
+After starting DSH Web:
+
+1. Open the execution-environment selector.
+2. Choose **Add server**.
+3. Enter the server address, SSH port, and username.
+4. Choose SSH Agent, private-key file, or temporary password authentication.
+5. Confirm the Host Key fingerprint on first connection.
+6. Test and save the server.
+7. Switch the current conversation to that server.
+
+The model still sees the official DSH tools. Only the execution location behind those tools changes.
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    M[Model]
+    T[Official DSH tools<br/>read · write · edit · glob · grep · bash · terminal]
+    I[Official DSH execution interfaces<br/>ctx.fs · ctx.subprocess · ctx.shell · ctx.terminals]
+
+    M --> T --> I
+
+    subgraph W[Execution World]
+        direction LR
+
+        subgraph L[Local]
+            LP[Native DSH Provider]
+            LOS[Local operating system]
+            LP --> LOS
+        end
+
+        subgraph R[Remote SSH]
+            RP[DSH Remote SSH Provider]
+            FS[SFTP<br/>remote filesystem]
+            EX[SSH exec<br/>processes / shell]
+            PTY[SSH PTY<br/>interactive terminal]
+            RG[Official glob / grep argv<br/>remote Linux ripgrep]
+
+            RP --> FS
+            RP --> EX
+            RP --> PTY
+            RP --> RG
+        end
+    end
+
+    I --> LP
+    I --> RP
+```
+
+Design goal:
+
 ```text
-Model
-  |
-  v
-Official DSH tools
-(read/write/edit/glob/grep/bash/terminal)
-  |
-  v
-Official provider seams
-(fs / subprocess / shell / terminals)
-  |
-  +--> Local providers --> local OS
-  |
-  +--> Remote SSH providers --> SSH/SFTP --> Linux server
+native DSH @ Linux
+        ≈
+DSH @ local machine + DSH Remote SSH → the same Linux host
 ```
 
-The plugin changes **where DSH executes**, not **how DSH behaves**.
+The plugin changes **where DSH executes**, not **how the model uses DSH tools**.
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for implementation details.
-
-## Installation
-
-DSH supports out-of-tree bundles through profile plugins. This repository declares `dsh.bundle.patch` in `package.json`. Runtime dependencies such as `ssh2`, plus the small official DSH consumer packages mounted directly by the remote execution realm, are installed with the plugin. Host capability/service packages remain host-provided peers.
-
-### Install from a local checkout
-
-Clone or extract this repository, open a terminal in the repository root, then run:
-
-```bash
-npm install --omit=dev --legacy-peer-deps
-dsh plugin --profile web add -w .
-dsh --profile web --dump-config
-dsh web
-```
-
-The dump should include the `dsh-remote-ssh` bundle.
-
-### Install from a package archive
-
-If you downloaded a release `.tgz`, install it through the DSH profile instead of manually copying it into a workspace:
-
-```bash
-dsh plugin --profile web add -w ./dsh-remote-ssh-1.0.2.tgz
-dsh web
-```
-
-### Install from GitHub
-
-After publishing the repository, users can install it directly with a GitHub package spec:
-
-```bash
-dsh plugin --profile web add -w github:<owner>/<repo>
-dsh web
-```
-
-Pinning a commit or tag is recommended for reproducible installations:
-
-```bash
-dsh plugin --profile web add -w github:<owner>/<repo>#<tag-or-commit>
-```
-
-## Update
-
-For a GitHub installation, a simple and predictable update flow is:
-
-```bash
-dsh plugin --profile web remove dsh-remote-ssh
-dsh plugin --profile web add -w github:<owner>/<repo>#<tag-or-commit>
-dsh web
-```
-
-For local development, reinstall from the checkout:
-
-```bash
-dsh plugin --profile web remove dsh-remote-ssh
-npm install --omit=dev --legacy-peer-deps
-dsh plugin --profile web add -w .
-dsh web
-```
-
-## Uninstall
-
-Remove the bundle from the Web profile:
-
-```bash
-dsh plugin --profile web remove dsh-remote-ssh
-```
-
-Restart DSH afterward.
-
-Optional cleanup:
-
-- Plugin state is stored under the DSH process working directory at `.dsh-remote-ssh/state.json`.
-- The remote ripgrep cache is stored under `~/.cache/dsh-remote-ssh/dsh-tools/` on servers where search tools were used.
-
-Both can be left in place. Delete them only if you want to remove saved server metadata / cached helper binaries as well.
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the detailed design and boundaries.
 
 ## Authentication
 
-### SSH Agent / system keychain — recommended
+### SSH Agent (recommended)
 
-The plugin asks the system SSH Agent to sign SSH authentication challenges. It does not read the Agent-managed private-key contents.
+The plugin asks the system SSH Agent to sign authentication challenges. It does not export private-key material from the Agent.
 
-The onboarding guide is OS-specific and covers:
+The same Agent identity can be authorized on multiple servers by installing the corresponding **public key** in each server's `~/.ssh/authorized_keys`.
 
-1. Generate or prepare an SSH key.
-2. Authorize the public key on the server.
-3. Add the private key to the system SSH Agent.
-4. Verify Agent-only login.
-5. On Windows, optionally back up and remove the ordinary private-key file after Agent login has been verified.
-
-Only the **public key** is copied to the server. The private key is never uploaded by the onboarding command.
+SSH Agent Forwarding is not enabled by this plugin.
 
 ### Private-key file
 
-The server configuration stores only the configured key path. The plugin reads that private-key file when establishing SSH connections.
+The server configuration stores the private-key path. The plugin reads the selected key when opening an SSH connection.
 
-For passphrase-protected keys, SSH Agent mode is recommended.
+For passphrase-protected keys, loading the key into SSH Agent and using Agent mode is recommended.
 
-### Ephemeral password
+### Temporary password
 
-The password is kept only in the current DSH Host process memory and is used for connection/reconnection during that process lifetime.
+Passwords are kept only in the current DSH Host process memory for connections and reconnects during that process lifetime.
 
-It is not written to:
+Passwords are not written to the plugin state file or browser `localStorage` / `sessionStorage`. A DSH Host restart requires entering the password again.
 
-- `.dsh-remote-ssh/state.json`
-- browser `localStorage`
-- browser `sessionStorage`
+## Remote host requirements
 
-Restarting the DSH Host intentionally forgets the password.
+Remote execution currently targets Linux / POSIX SSH hosts with:
 
-## Security notes
+- working SSH / SFTP access;
+- sufficient permissions for the selected SSH account;
+- a normal POSIX shell environment.
 
-- Model-provider API keys and model Base URLs are **not managed by this plugin** and are not included in this repository. Configure them through DSH itself.
-- SSH Agent forwarding is not enabled by this plugin.
-- Remote execution does not expose the Host filesystem through the remote provider.
-- Local mode deliberately keeps native DSH behavior. If local DSH can read a file with the current OS user's permissions, this plugin does not add a prompt-based or path-based block.
-- Server records contain non-secret connection metadata, authentication mode, optional private-key path, and trusted host-key fingerprint. Password contents are not persisted.
+The remote host does not need to preinstall:
 
-Please report security issues privately before publishing details. See [SECURITY.md](./SECURITY.md).
+- DSH Remote SSH;
+- DeepSeek Harness;
+- Node.js;
+- Python.
 
-## Development
+The ripgrep binary required by search is handled and cached by the plugin for the remote environment; users do not need to configure a system `rg` manually.
 
-Static syntax check:
+## Security
 
-```bash
-npm run check
-```
+- Model-provider API keys and model Base URLs remain managed by DSH; this plugin does not read or persist them.
+- First-use SSH Host Key fingerprints can be verified before trust is stored.
+- Remote execution has the permissions of the selected SSH account.
+- The Remote Provider does not expose the DSH Host's local filesystem to the remote execution world.
+- Local mode deliberately preserves native DSH behavior. If the local OS user can already read a file, this plugin does not add prompt-based or path-blacklist restrictions that change that permission model.
 
-The plugin is an external DSH bundle and does not require modifying the DeepSeek Harness source checkout.
+See [SECURITY.md](./SECURITY.md) for details.
+
+## Compatibility
+
+This project integrates through DeepSeek Harness Bundle, Provider, and Web Client extension interfaces and does not modify DSH source code.
+
+DSH is evolving. This README does not hard-code a DSH application version, and the project does not claim untested future releases will always remain compatible. Upstream breaking interface changes may require a corresponding plugin update.
+
+## Documentation
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — architecture, execution boundaries, and implementation notes
+- [SECURITY.md](./SECURITY.md) — security model and credential handling
+- [CHANGELOG.md](./CHANGELOG.md) — release changes
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — development and contribution guide
+
+## Related project
+
+- [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) — host project and integration target
+
+## Friends
+
+- [LINUX DO](https://linux.do/)
 
 ## License
 
 [MIT](./LICENSE)
-
-## Links
-
-- DeepSeek Harness: https://github.com/deepseek-ai/deepseek-harness
-- LINUX DO: https://linux.do/
