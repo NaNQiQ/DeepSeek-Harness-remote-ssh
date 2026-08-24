@@ -6,7 +6,6 @@
 
 在对话输入框旁选择一台已添加的服务器后，DSH 原有的 `read / write / edit / glob / grep / bash / terminal` 会切换到远端执行。插件不修改 DSH 源码，服务器也无需安装 DSH、本插件、Node.js 或 Python。
 
-> 社区项目，与 DeepSeek 官方无隶属或背书关系。
 
 ## 功能
 
