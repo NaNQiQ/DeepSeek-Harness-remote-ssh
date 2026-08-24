@@ -6,7 +6,6 @@ Use the native **DeepSeek Harness (DSH)** tools directly on remote Linux servers
 
 Select a saved server next to the conversation composer and DSH's existing `read / write / edit / glob / grep / bash / terminal` tools run remotely. The plugin does not modify DSH source code, and the server does not need DSH, this plugin, Node.js, or Python installed.
 
-> This is a community project and is not affiliated with or endorsed by DeepSeek.
 
 ## Features
 
