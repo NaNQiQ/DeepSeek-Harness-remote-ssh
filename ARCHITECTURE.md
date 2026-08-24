@@ -1,0 +1,111 @@
+# DSH Remote SSH architecture
+
+## Invariant: execution moves, DSH does not
+
+Selecting a target changes the execution world, not DSH's model-facing tool catalogue or normal reasoning behavior.
+
+```text
+                         DSH / Model
+                             |
+                       official tools
+                             |
+            +----------------+----------------+
+            |                |                |
+           fs           subprocess/shell    terminal
+            |                |                |
+       provider seam    provider seam     provider seam
+            |                |                |
+       local or SSH-backed execution world
+```
+
+The Harness checkout is not modified. There are no plugin-owned model tools such as `ssh_read` or `ssh_bash`.
+
+## Cordis execution realm
+
+Each remote Agent gets fresh isolation scopes for `fs`, `subprocess`, `shell`, `terminals`, and the scoped sandbox-policy dependency expected by the official terminal stack. Isolation labels are not derived from server id, so two conversations can select the same server without colliding on Service registration.
+
+The Host-scoped `ConnectionManager` is separately keyed by server id, allowing those isolated realms to reuse one live SSH transport.
+
+Provider services avoid JavaScript native `#private` members because Cordis can invoke Services through traceable shadow receivers. Mutable provider state is held in ordinary shared state objects instead of binding methods around Cordis tracing.
+
+## Filesystem semantics
+
+`SshFileSystem` implements the official `FileSystem` contract over SFTP.
+
+The important distinction is:
+
+```text
+default cwd != home != filesystem access boundary
+```
+
+- The configured server directory is the default cwd.
+- The remote account home is resolved independently.
+- `~` resolves against the real remote home.
+- Relative paths resolve from the active remote cwd.
+- Absolute POSIX paths stay absolute.
+- Host Windows paths that leak from immutable `SessionHeader.cwd` during an execution handoff map only to the active remote default cwd; they are never interpreted as Linux paths.
+- Authorization for `/opt`, `/etc`, `/var`, and all other paths is left to the remote OS account.
+
+There are no FRP, `/opt`, package-manager, or other machine-specific special cases.
+
+## Subprocess, bash, search, and terminal
+
+`SshSubprocessRuntime` supplies normal process execution and PTY allocation over SSH channels. The official `LocalBashExecutor`, official Bash tool, and official terminal stack consume that runtime.
+
+The execution cwd follows the same path semantics as the filesystem provider. A remote cwd is a starting location, not a machine boundary.
+
+DSH filesystem search uses a Harness-owned packaged ripgrep executable path. That Host coordinate cannot exist in a remote Linux execution world. The subprocess provider therefore replaces only that executable coordinate with a same-purpose packaged Linux ripgrep asset cached under the remote user account through the execution-world executable resolver. The official DSH argv, glob/regex semantics, timeout, parsing, and model-facing tools remain unchanged. No provider-side recursive search emulation is used.
+
+## Execution handoff
+
+The DSH left-side Workspace and existing conversation history remain unchanged when the user changes targets. The plugin maintains a per-session execution target and generation in sidecar state.
+
+A successful switch:
+
+1. validates/establishes the target transport;
+2. composes the new isolated provider realm;
+3. commits the new target;
+4. increments the execution revision;
+5. records a sidecar handoff `{from,to,time,generation,anchorMessageId}` when a durable assistant anchor exists;
+6. supplies only current execution-world identity/OS/cwd facts to model context.
+
+DSH projects dynamic runtime context immediately before model steps and treats newer runtime-context snapshots as current. The plugin uses that lifecycle for a one-shot handoff provenance boundary instead of keeping a permanent machine-state rule. After a real mid-conversation handoff, the next accepted model step receives one transient sentence identifying the previous and current execution environments and attributing pre-handoff machine observations to the previous world. The handoff generation is acknowledged only after `agent/pre-step` accepts the step; the next runtime-context snapshot is current-only again. Rejected or aborted pre-steps do not consume the notice.
+
+The immutable DSH Session/Workspace metadata is not rewritten. During system-prompt assembly, only the model-facing `cwd` variable is projected from the active execution world so the official model context and official tools agree about the current location.
+
+## Durable conversation handoff node
+
+The switch marker is recorded as a plugin-owned log-only Session event and rendered as its own keyed `conversation.chat.node` row. It does not use Assistant actions or the `conversation.chat.turnTail` chain, so it neither waits for message-action chrome nor competes with Produced Files:
+
+```text
+──────── 已切换执行环境：<configured server name> · Linux ────────
+```
+
+The marker is therefore replayable when the conversation is reopened, yet remains UI-only and never becomes a model message. It coexists with DSH's `turnTail` chain (including Produced Files) instead of claiming that single-winner chain. No path or transport detail is shown. If a switch occurs before the conversation has any durable assistant message, the execution handoff still succeeds but there is no transcript anchor to render.
+
+## Model context discipline
+
+The plugin must not teach DSH a separate "remote mode". It therefore avoids behavioral guidance such as:
+
+- "remote Linux server" / "backed through SSH";
+- "do not SSH again";
+- "access root is /root";
+- special search locations;
+- invented network limitations.
+
+Only facts required to disambiguate a real execution handoff are projected. Tool choice, filesystem exploration, process inspection, and troubleshooting strategy stay owned by native DSH behavior.
+
+## Security boundary
+
+A Host workspace sandbox cannot enforce process confinement in another kernel. The remote realm therefore must not pretend that `cwd` or a Host workspace is a security boundary. Remote authority ultimately follows the SSH account and remote OS permissions.
+
+Reproducing restricted `workspace-write/read-only` process isolation on a remote kernel would require a dedicated remote sandbox runner. That is a separate security capability, not something to emulate with path restrictions or prompts.
+
+
+## Ephemeral password authentication
+
+Password authentication is implemented as a transport credential, not configuration. The persisted server record contains only `auth.type = "password"`; the password itself is sent over the loopback-only plugin RPC for the test/save operation, copied into Host-process memory, reused by the pooled SSH connection and on-demand reconnects, zeroed when replaced/removed/disposed, and never written into RuntimeStore or browser storage. A Host restart intentionally forgets the password.
+
+## Authentication UX boundary
+
+Authentication remains below the DSH execution-world seam and never changes model-facing tools. The editor exposes three explicit transport credentials with no implicit cross-mode fallback for newly saved configurations: system SSH Agent, explicit/default private-key file, and volatile in-memory password. Onboarding is UI-only and follows the selected mode. Agent onboarding uploads only the public key and verifies Agent use without allowing password or local identity-file fallback. Local DSH execution remains native and is not given plugin-owned `.ssh` path restrictions.

@@ -1,0 +1,25 @@
+node_modules/
+*.tgz
+*.zip
+.DS_Store
+Thumbs.db
+
+# Local DSH / plugin state
+.dsh-remote-ssh/
+# Legacy local state from pre-1.0 builds
+.ywmanager/
+.dsh/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Editors / logs
+.vscode/
+.idea/
+*.log
