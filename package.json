@@ -1,17 +1,19 @@
 {
   "name": "dsh-remote-ssh",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Remote SSH execution provider for DeepSeek Harness using native DSH tools",
   "type": "module",
-  "main": "./src/index.js",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.js",
+    ".": "./dist/index.js",
     "./client": "./client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
   "files": [
+    "dist",
     "src",
+    "scripts",
     "client.js",
     "cordis.patch.yml",
     "README.md",
@@ -20,20 +22,25 @@
     "LICENSE",
     "SECURITY.md",
     "CHANGELOG.md",
-    "CONTRIBUTING.md"
+    "CONTRIBUTING.md",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "engines": {
     "node": ">=24.0.0"
   },
   "scripts": {
+    "build": "node ./scripts/build-host.mjs",
     "test": "node --test",
-    "check": "node --check src/index.js && node --check src/utils.js && node --check src/store.js && node --check src/connection-manager.js && node --check src/remote-fs.js && node --check src/remote-subprocess.js && node --check src/remote-realm.js && node --check client.js && node --test"
+    "check": "node ./scripts/build-host.mjs && node --check src/index.js && node --check src/utils.js && node --check src/store.js && node --check src/connection-manager.js && node --check src/remote-fs.js && node --check src/remote-subprocess.js && node --check src/remote-realm.js && node --check dist/index.js && node --check client.js && node --test"
   },
   "dependencies": {
-    "ssh2": "1.17.0",
     "@vscode/ripgrep-universal": "1.18.0",
     "@deepseek-ai/dsh-bash-local": "^0.1.0-rc.8",
     "@deepseek-ai/dsh-tool-terminal": "^0.1.0-rc.8"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "ssh2": "1.17.0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
