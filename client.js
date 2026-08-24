@@ -288,12 +288,14 @@ function agentGuideCommands(platform, form) {
   const verify = `ssh -o BatchMode=yes -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no -o PreferredAuthentications=publickey -o IdentityFile=none -p ${port} ${target} "echo SSH_KEY_OK"`;
   if (platform === "windows") {
     return {
-      terminal: "PowerShell",
-      generate: 'if (-not (Test-Path "$env:USERPROFILE\\.ssh\\id_ed25519")) { ssh-keygen -t ed25519 -a 64 -f "$env:USERPROFILE\\.ssh\\id_ed25519" } else { Write-Host "SSH key already exists" }',
-      install: `Get-Content "$env:USERPROFILE\\.ssh\\id_ed25519.pub" | ssh -p ${port} ${target} "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys"`,
-      agent: 'Get-Service ssh-agent | Set-Service -StartupType Automatic; Start-Service ssh-agent; ssh-add "$env:USERPROFILE\\.ssh\\id_ed25519"; ssh-add -l',
+      terminal: "CMD",
+      generate: 'if not exist "%USERPROFILE%\\.ssh" mkdir "%USERPROFILE%\\.ssh" & if not exist "%USERPROFILE%\\.ssh\\id_ed25519" (ssh-keygen -t ed25519 -a 64 -f "%USERPROFILE%\\.ssh\\id_ed25519") else (echo SSH key already exists)',
+      install: `type "%USERPROFILE%\\.ssh\\id_ed25519.pub" | ssh -p ${port} ${target} "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys"`,
+      serviceSetup: "sc.exe config ssh-agent start= auto && sc.exe start ssh-agent",
+      agent: 'ssh-add "%USERPROFILE%\\.ssh\\id_ed25519" && ssh-add -l',
       verify,
-      agentNote: "如提示 passphrase，请只在系统终端输入。",
+      serviceNote: "右键 CMD，选择“以管理员身份运行”，执行一次即可。如果提示服务已经启动，可以继续下一步。",
+      agentNote: "回到普通 CMD 执行。如提示 Enter passphrase，请输入第 1 步设置的密钥口令；最后必须列出一把密钥。",
       protectNote: "确认 Agent 登录成功后，可以先把私钥安全备份，再从本机普通目录移除私钥文件。插件不会自动删除；没有备份或恢复入口时不要删除。公钥 .pub 可以保留。",
     };
   }
@@ -421,9 +423,10 @@ function ConnectionGuide({ form, hostPlatform, platform, onPlatform }) {
     commands ? h("div", { className: "dshrs-guide" },
       h(GuideStep, { number: 1, title: `打开 ${commands.terminal}，检查或生成 SSH 密钥`, note: "新生成时建议设置 passphrase。", command: commands.generate }),
       h(GuideStep, { number: 2, title: `将公钥授权到「${serverName}」`, note: "只上传公钥，私钥不会上传。首次授权时，系统 ssh 可能在终端要求现有登录凭据；插件不会获取。", command: commands.install }),
-      h(GuideStep, { number: 3, title: "把私钥加入系统 SSH Agent", note: commands.agentNote, command: commands.agent }),
-      h(GuideStep, { number: 4, title: "验证 Agent 登录", note: "仅验证 SSH Agent，不使用密码或本地私钥文件回退。成功会输出 SSH_KEY_OK。", command: commands.verify }),
-      h(GuideStep, { number: 5, title: platform === "windows" ? "保护本机私钥（可选）" : "保护本机私钥", note: commands.protectNote }),
+      commands.serviceSetup ? h(GuideStep, { number: 3, title: "以管理员身份打开 CMD，启用 SSH Agent", note: commands.serviceNote, command: commands.serviceSetup }) : null,
+      h(GuideStep, { number: commands.serviceSetup ? 4 : 3, title: "把私钥加入系统 SSH Agent", note: commands.agentNote, command: commands.agent }),
+      h(GuideStep, { number: commands.serviceSetup ? 5 : 4, title: "验证 Agent 登录", note: "仅验证 SSH Agent，不使用密码或本地私钥文件回退。成功会输出 SSH_KEY_OK。", command: commands.verify }),
+      h(GuideStep, { number: commands.serviceSetup ? 6 : 5, title: platform === "windows" ? "保护本机私钥（可选）" : "保护本机私钥", note: commands.protectNote }),
       h("div", { className: "dshrs-security" },
         h("div", null, "• Agent 模式下插件只请求签名，不读取私钥正文。服务器端只保存公钥。"),
         h("div", null, "• 首次连接仍会校验 SSH Host Key 指纹。"),
@@ -480,10 +483,15 @@ function ErrorStatus({ error, form, hostPlatform, onTrust, onOpenGuide, busy }) 
         h("div", { className: "dshrs-status-text" }, message),
         code === "AGENT_UNAVAILABLE" ? h("div", { style: { marginTop: 7 } },
           hostPlatform === "win32"
-            ? h(Command, { text: 'Set-Service -Name ssh-agent -StartupType Automatic; Start-Service ssh-agent; ssh-add -l' })
+            ? h("div", null,
+                h("div", { className: "dshrs-guide-note", style: { marginBottom: 5 } }, "先以管理员身份打开 CMD，启用服务："),
+                h(Command, { text: "sc.exe config ssh-agent start= auto && sc.exe start ssh-agent" }),
+                h("div", { className: "dshrs-guide-note", style: { marginTop: 7, marginBottom: 5 } }, "再回到普通 CMD，加载并检查密钥："),
+                h(Command, { text: 'ssh-add "%USERPROFILE%\\.ssh\\id_ed25519" && ssh-add -l' }),
+              )
             : h(Command, { text: "ssh-add -l" }),
           h("div", { className: "dshrs-guide-note", style: { marginTop: 5 } }, hostPlatform === "win32"
-            ? "这条命令要在运行 DSH 的 Windows 电脑上执行；Set-Service / Start-Service 请使用管理员 PowerShell。最后应列出至少一把密钥；如果没有，请打开下面的连接引导。"
+            ? "ssh-add 如提示 passphrase，请输入生成密钥时设置的口令。最后必须列出至少一把密钥；如果没有，请打开下面的连接引导。"
             : "这里必须能看到至少一把密钥。普通 ssh 能登录并不能证明 Agent 可用，因为系统 ssh 可能直接读取 ~/.ssh 私钥，甚至回退到密码登录。"),
         ) : null,
         onOpenGuide ? h("div", { style: { marginTop: 7 } }, h("button", { type: "button", className: "dshrs-text-button", onClick: onOpenGuide }, "查看新服务器连接引导")) : null,
