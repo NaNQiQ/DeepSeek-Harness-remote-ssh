@@ -47,6 +47,29 @@ If Windows cannot find `pnpm`, run `npm install -g pnpm@11` in CMD and reopen CM
 
 For later conversations, simply select the saved server. The model continues to use official DSH tools; only the location behind those tools changes.
 
+## Screenshots
+
+<details>
+<summary><strong>Add and configure an SSH server</strong></summary>
+
+![Add and configure an SSH server](./docs/images/add-server.png)
+
+</details>
+
+<details>
+<summary><strong>Switch between local and remote execution environments</strong></summary>
+
+![Switch execution environment](./docs/images/switch-environment.png)
+
+</details>
+
+<details>
+<summary><strong>Use native DSH tools on the remote server</strong></summary>
+
+![Remote server execution result](./docs/images/remote-execution.png)
+
+</details>
+
 ## Architecture
 
 ```mermaid

@@ -47,6 +47,29 @@ dsh web
 
 ä»¥åŽåªéœ€é€‰æ‹©å·²ä¿å­˜çš„æœåŠ¡å™¨ã€‚åˆ‡æ¢åŽæ¨¡åž‹ä»ç„¶ä½¿ç”¨ DSH å®˜æ–¹å·¥å…·ï¼Œå˜åŒ–çš„åªæ˜¯å·¥å…·èƒŒåŽçš„æ‰§è¡Œä½ç½®ã€‚
 
+## ½çÃæÔ¤ÀÀ
+
+<details>
+<summary><strong>Ìí¼Ó²¢ÅäÖÃ SSH ·þÎñÆ÷</strong></summary>
+
+![Ìí¼Ó²¢ÅäÖÃ SSH ·þÎñÆ÷](./docs/images/add-server.png)
+
+</details>
+
+<details>
+<summary><strong>ÔÚ±¾µØÓëÔ¶³ÌÖ´ÐÐ»·¾³Ö®¼äÇÐ»»</strong></summary>
+
+![ÇÐ»»Ö´ÐÐ»·¾³](./docs/images/switch-environment.png)
+
+</details>
+
+<details>
+<summary><strong>Ê¹ÓÃ DSH Ô­Éú¹¤¾ß²Ù×÷Ô¶³Ì·þÎñÆ÷</strong></summary>
+
+![Ô¶³Ì·þÎñÆ÷Ö´ÐÐÐ§¹û](./docs/images/remote-execution.png)
+
+</details>
+
 ## æž¶æž„
 
 ```mermaid
