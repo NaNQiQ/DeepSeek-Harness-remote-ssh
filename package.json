@@ -34,9 +34,9 @@
     "check": "node ./scripts/build-host.mjs && node --check src/index.js && node --check src/utils.js && node --check src/store.js && node --check src/connection-manager.js && node --check src/remote-fs.js && node --check src/remote-subprocess.js && node --check src/remote-realm.js && node --check dist/index.js && node --check client.js && node --test"
   },
   "dependencies": {
-    "@vscode/ripgrep-universal": "1.18.0",
     "@deepseek-ai/dsh-bash-local": "^0.1.0-rc.8",
-    "@deepseek-ai/dsh-tool-terminal": "^0.1.0-rc.8"
+    "@deepseek-ai/dsh-tool-terminal": "^0.1.0-rc.8",
+    "@vscode/ripgrep-universal": "1.18.0"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
@@ -50,19 +50,19 @@
     "@deepseek-ai/dsh-client-ui-conversation": "*",
     "@deepseek-ai/dsh-client-ui-primitives": "*",
     "@deepseek-ai/dsh-client-ui-slots": "*",
-    "react": "*",
     "@deepseek-ai/dsh-fs": "*",
-    "@deepseek-ai/dsh-subprocess": "*",
     "@deepseek-ai/dsh-fs-observation-policy": "*",
-    "@deepseek-ai/dsh-tool-fs": "*",
-    "@deepseek-ai/dsh-tool-fs-search": "*",
-    "@deepseek-ai/dsh-tool-bash": "*",
-    "@deepseek-ai/dsh-terminal": "*",
-    "@deepseek-ai/dsh-terminal-bash": "*",
-    "@deepseek-ai/dsh-system-prompt": "*",
+    "@deepseek-ai/dsh-jobs": "*",
     "@deepseek-ai/dsh-shell": "*",
     "@deepseek-ai/dsh-shell-env": "*",
-    "@deepseek-ai/dsh-jobs": "*"
+    "@deepseek-ai/dsh-subprocess": "*",
+    "@deepseek-ai/dsh-system-prompt": "*",
+    "@deepseek-ai/dsh-terminal": "*",
+    "@deepseek-ai/dsh-terminal-bash": "*",
+    "@deepseek-ai/dsh-tool-bash": "*",
+    "@deepseek-ai/dsh-tool-fs": "*",
+    "@deepseek-ai/dsh-tool-fs-search": "*",
+    "react": "*"
   },
   "dsh": {
     "bundle": {
@@ -150,5 +150,13 @@
     "@deepseek-ai/dsh-jobs": {
       "optional": true
     }
+  },
+  "homepage": "https://github.com/NaNQiQ/deepseek-harness-remote-ssh#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NaNQiQ/deepseek-harness-remote-ssh.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NaNQiQ/deepseek-harness-remote-ssh/issues"
   }
 }

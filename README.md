@@ -23,7 +23,7 @@ Select a saved server next to the conversation composer and DSH's existing `read
 Requires Node.js 24 or newer, with `dsh` and `pnpm` available on `PATH`.
 
 ```bat
-dsh plugin --profile web add github:NaNQiQ/DeepSeek-Harness-remote-ssh
+dsh plugin --profile web add github:NaNQiQ/deepseek-harness-remote-ssh
 dsh web
 ```
 

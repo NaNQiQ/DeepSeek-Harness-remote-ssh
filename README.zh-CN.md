@@ -23,7 +23,7 @@
 需要 Node.js 24 或更高版本，并确保 `dsh` 和 `pnpm` 可在命令行中使用。
 
 ```bat
-dsh plugin --profile web add github:NaNQiQ/DeepSeek-Harness-remote-ssh
+dsh plugin --profile web add github:NaNQiQ/deepseek-harness-remote-ssh
 dsh web
 ```
 
